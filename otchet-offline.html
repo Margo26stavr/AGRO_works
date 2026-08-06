@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16211C">
+<title>План-факт полевых работ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16211C; --paper:#E8EAE3; --card:#FCFCFA; --line:#D3D8CC;
+  --leaf:#2E6B41; --straw:#B57E0C; --clay:#A63D28; --mute:#6B7469;
+  --shadow:0 1px 0 rgba(22,33,28,.06), 0 6px 18px -12px rgba(22,33,28,.35);
+  --pad:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font:400 15px/1.45 "IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  padding-bottom:calc(76px + env(safe-area-inset-bottom));
+  -webkit-font-smoothing:antialiased;
+}
+.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+h1,h2,h3,.disp{font-family:"Oswald",Impact,sans-serif;font-weight:500;letter-spacing:.01em;margin:0}
+
+/* ---------- шапка ---------- */
+header{
+  position:sticky;top:0;z-index:30;background:var(--ink);color:#EEF1EA;
+  padding:calc(10px + env(safe-area-inset-top)) var(--pad) 0;
+}
+.head-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.head-top h1{font-size:19px;text-transform:uppercase;letter-spacing:.06em}
+.head-top .date{font-size:12.5px;color:#A9B5A6}
+.kpi{display:flex;gap:8px;padding:12px 0 10px;overflow-x:auto;scrollbar-width:none}
+.kpi::-webkit-scrollbar{display:none}
+.kpi div{flex:0 0 auto;min-width:88px;padding:7px 11px;border:1px solid rgba(255,255,255,.16);border-radius:10px}
+.kpi b{display:block;font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:600;line-height:1.15}
+.kpi span{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:#9DAB9C}
+/* вкладки */
+.tabs{display:flex;gap:2px}
+.tabs button{
+  flex:1;background:none;border:0;border-bottom:2px solid transparent;color:#9DAB9C;
+  font:500 13px/1 "Oswald",sans-serif;letter-spacing:.07em;text-transform:uppercase;
+  padding:11px 4px 9px;cursor:pointer
+}
+.tabs button[aria-selected="true"]{color:#FCFCFA;border-bottom-color:#8FBF6A}
+
+/* ---------- фильтры ---------- */
+.filters{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:1px solid var(--line)}
+.chiprow{display:flex;gap:6px;padding:9px var(--pad);overflow-x:auto;scrollbar-width:none}
+.chiprow::-webkit-scrollbar{display:none}
+.chiprow+.chiprow{padding-top:0}
+.chip{
+  flex:0 0 auto;background:var(--card);border:1px solid var(--line);border-radius:999px;
+  padding:6px 12px;font-size:13px;color:var(--ink);cursor:pointer;white-space:nowrap
+}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#F3F5EF}
+.chip .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--mute);margin-right:5px}
+.chip[aria-pressed="true"] .lbl{color:#94A392}
+
+main{padding:12px var(--pad) 0}
+.hint{color:var(--mute);font-size:12.5px;margin:0 0 10px}
+
+/* ---------- карточка вида работ ---------- */
+.op{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:9px;box-shadow:var(--shadow);overflow:hidden}
+.op>summary{list-style:none;cursor:pointer;padding:12px 13px;display:block}
+.op>summary::-webkit-details-marker{display:none}
+.op-l1{display:flex;align-items:flex-start;gap:9px}
+.op-name{flex:1;font:500 16px/1.25 "Oswald",sans-serif;text-transform:uppercase;letter-spacing:.02em}
+.op-pct{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:17px;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;margin-top:6px}
+.s-done{background:var(--leaf)} .s-ok{background:#7BA23F} .s-warn{background:var(--straw)} .s-risk{background:var(--clay)}
+.c-done{color:var(--leaf)} .c-ok{color:#5C8C2F} .c-warn{color:var(--straw)} .c-risk{color:var(--clay)}
+
+/* СИГНАТУРА: полоса выполнения нарисована как обработанное поле — гоны по вспашке */
+.field{position:relative;height:13px;border-radius:3px;margin:9px 0 7px;overflow:hidden;
+  background:repeating-linear-gradient(135deg,#E4E7DD 0 5px,#EDEFE7 5px 10px);border:1px solid var(--line)}
+.field i{position:absolute;inset:0 auto 0 0;display:block;
+  background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.28) 0 1px,transparent 1px 6px);
+  background-color:currentColor}
+.f-done i,.f-ok i{color:#3F7D42} .f-warn i{color:#C08A15} .f-risk i{color:#A63D28}
+.op-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--mute)}
+.op-meta b{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--ink)}
+
+/* детализация */
+.detail{border-top:1px dashed var(--line);padding:4px 13px 12px}
+.item{padding:9px 0;border-bottom:1px solid #EFF1EA}
+.item:last-child{border-bottom:0}
+.item-h{display:flex;gap:8px;align-items:baseline}
+.item-h .t{flex:1;font-size:14px;line-height:1.3}
+.item-h .t em{font-style:normal;color:var(--mute);font-size:12px;display:block}
+.tagfarm{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);
+  border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.spark{display:flex;align-items:flex-end;gap:1.5px;height:26px;margin-top:7px}
+.spark span{flex:1;min-width:2px;background:#C3CDBC;border-radius:1px 1px 0 0}
+.spark span.hot{background:#5C8C2F}
+
+/* ---------- вкладка «По дням» ---------- */
+.daybar{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.daybar::-webkit-scrollbar{display:none}
+.day{flex:0 0 auto;background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:7px 10px;text-align:center;cursor:pointer;min-width:60px}
+.day[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#F3F5EF}
+.day small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
+.day[aria-pressed="true"] small{color:#9DAB9C}
+.day b{font-family:"IBM Plex Mono",monospace;font-size:14px;font-weight:600}
+.bars{display:flex;align-items:flex-end;gap:3px;height:64px;margin:2px 0 14px;
+  padding:8px 10px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.bars span{flex:1;background:#B9C6B2;border-radius:2px 2px 0 0;min-height:2px;cursor:pointer}
+.bars span.sel{background:var(--ink)}
+.row{display:flex;gap:10px;align-items:baseline;background:var(--card);border:1px solid var(--line);
+  border-radius:10px;padding:10px 12px;margin-bottom:7px}
+.row .t{flex:1;font-size:14px}
+.row .t small{display:block;color:var(--mute);font-size:12px}
+.row .v{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+
+/* ---------- вкладка «Сроки» ---------- */
+.gantt{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin-bottom:7px}
+.gantt .g-h{display:flex;gap:8px;align-items:baseline;margin-bottom:8px}
+.track{position:relative;height:8px;background:#EDEFE7;border-radius:4px;margin:5px 0}
+.track i{position:absolute;top:0;bottom:0;border-radius:4px;display:block}
+.tr-plan i{background:#C3CDBC}
+.tr-fact i{background:#4B7F3E}
+.legend{display:flex;gap:14px;font-size:11.5px;color:var(--mute);margin-bottom:10px}
+.legend s{text-decoration:none;display:inline-block;width:16px;height:7px;border-radius:4px;vertical-align:middle;margin-right:5px}
+.dates{display:flex;gap:14px;font-size:12px;color:var(--mute);flex-wrap:wrap}
+.dates b{font-family:"IBM Plex Mono",monospace;color:var(--ink);font-weight:500}
+
+/* ---------- низ ---------- */
+.bottom{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;gap:8px;
+  padding:10px var(--pad) calc(10px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(232,234,227,0),var(--paper) 34%)}
+.btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;text-decoration:none;
+  background:var(--ink);color:#F3F5EF;border:0;border-radius:11px;padding:13px;cursor:pointer;
+  font:500 13px/1 "Oswald",sans-serif;letter-spacing:.07em;text-transform:uppercase}
+.btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line);flex:0 0 46%}
+footer{color:var(--mute);font-size:11.5px;text-align:center;padding:16px 0 6px}
+.empty{color:var(--mute);text-align:center;padding:34px 10px;font-size:14px}
+@media (prefers-reduced-motion:no-preference){.op[open] .detail{animation:in .18s ease-out}}
+@keyframes in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+:focus-visible{outline:2px solid #8FBF6A;outline-offset:2px}
+</style>
+</head>
+<body>
+<script id="embedded" type="application/json">{"meta":{"title":"План-факт полевых работ","season":"2026","reportDate":"2026-05-24","generatedAt":"2026-08-06T04:58:45","source":"Общий свод 2026"},"totals":{"plan":37900.16,"fact":31056.1,"left":6844.06,"pct":81.9,"lastDay":"2026-05-24","lastDayFact":569.0,"week":3065.0,"tempo":437.9},"days":["2026-01-23","2026-02-27","2026-02-28","2026-03-01","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-14","2026-03-15","2026-03-16","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-28","2026-03-29","2026-03-30","2026-04-01","2026-04-02","2026-04-04","2026-04-05","2026-04-06","2026-04-07","2026-04-11","2026-04-13","2026-04-14","2026-04-15","2026-04-16","2026-04-17","2026-04-18","2026-04-19","2026-04-20","2026-04-22","2026-04-23","2026-04-25","2026-04-26","2026-04-27","2026-04-28","2026-04-29","2026-04-30","2026-05-01","2026-05-02","2026-05-03","2026-05-04","2026-05-05","2026-05-06","2026-05-07","2026-05-08","2026-05-09","2026-05-10","2026-05-11","2026-05-12","2026-05-13","2026-05-18","2026-05-19","2026-05-20","2026-05-22","2026-05-23","2026-05-24"],"byDay":{"2026-03-29":1098.0,"2026-03-30":440.0,"2026-04-01":216.0,"2026-04-02":616.0,"2026-04-04":383.0,"2026-04-05":804.0,"2026-04-06":895.0,"2026-04-11":170.0,"2026-04-13":358.0,"2026-04-14":622.0,"2026-04-15":807.0,"2026-04-16":598.0,"2026-04-17":521.0,"2026-04-18":941.0,"2026-04-20":706.44,"2026-04-22":660.0,"2026-04-23":783.0,"2026-04-25":628.0,"2026-04-26":874.0,"2026-04-27":303.9,"2026-04-28":1104.6,"2026-04-29":711.16,"2026-04-30":1108.0,"2026-05-03":407.0,"2026-05-06":172.0,"2026-05-07":283.0,"2026-05-08":732.0,"2026-05-10":623.0,"2026-05-12":674.0,"2026-05-13":327.0,"2026-05-19":212.0,"2026-05-22":739.0,"2026-05-23":854.0,"2026-05-24":569.0,"2026-05-20":287.0,"2026-02-27":594.0,"2026-02-28":925.0,"2026-03-01":990.0,"2026-03-02":989.0,"2026-03-03":737.0,"2026-05-11":249.0,"2026-03-23":515.0,"2026-03-24":653.0,"2026-03-25":1021.0,"2026-03-28":884.0,"2026-03-04":122.0,"2026-03-05":79.0,"2026-03-10":126.0,"2026-03-11":118.0,"2026-03-12":229.0,"2026-03-13":228.0,"2026-03-14":171.0,"2026-03-20":100.0,"2026-04-07":189.0,"2026-03-09":39.0,"2026-03-18":28.0,"2026-03-19":151.0,"2026-05-01":30.0,"2026-05-04":31.0,"2026-05-05":52.0,"2026-03-15":205.0,"2026-03-16":124.0,"2026-04-19":92.0,"2026-05-18":77.0,"2026-05-02":54.0,"2026-05-09":25.0,"2026-01-23":2.0},"sections":["ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ"],"farms":["АгроЛидер","ГРК","Ипатовский(винодельнийский)","Киров","Колос"],"cultures":["Горох овощной (богара)","Горох овощной (полив)","Кукуруза (сладкая)","Кукуруза на зерно","Кукуруза сахарная","Кукуруза сладкая","Кукуруза супер.сладкая(полив)","Кукуруза суперсладкая","Подсолнечник","Подсолнечник гибридный","Подсолнечник товарный","Подсонечниик","Пшеница озимая","Рапс озимый","кукуруза супер сладкая"],"ops":[{"id":"him-obrabotka-3","section":"ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ","name":"Хим обработка","plan":12627.0,"fact":11198.0,"daily":{"2026-03-29":130.0,"2026-03-30":90.0,"2026-04-01":106.0,"2026-04-02":164.0,"2026-04-04":237.0,"2026-04-05":550.0,"2026-04-06":381.0,"2026-04-11":170.0,"2026-04-13":358.0,"2026-04-14":299.0,"2026-04-15":392.0,"2026-04-16":344.0,"2026-04-17":208.0,"2026-04-18":380.0,"2026-04-20":370.0,"2026-04-22":573.0,"2026-04-23":557.0,"2026-04-25":510.0,"2026-04-26":642.0,"2026-04-27":95.0,"2026-04-28":541.0,"2026-04-29":312.0,"2026-04-30":345.0,"2026-05-03":359.0,"2026-05-06":47.0,"2026-05-07":225.0,"2026-05-08":567.0,"2026-05-10":486.0,"2026-05-12":309.0,"2026-05-13":121.0,"2026-05-19":72.0,"2026-05-22":312.0,"2026-05-23":643.0,"2026-05-24":303.0},"items":[{"sub":"гербицидная","culture":"Пшеница озимая","farm":"ГРК","plan":3798.0,"fact":3776.0,"left":22.0,"pct":99.4,"status":"ok","planStart":null,"planEnd":null,"factStart":"2026-04-01","factEnd":"2026-04-23","daily":{"2026-04-01":75.0,"2026-04-02":164.0,"2026-04-04":237.0,"2026-04-05":241.0,"2026-04-06":381.0,"2026-04-11":170.0,"2026-04-13":358.0,"2026-04-14":299.0,"2026-04-15":392.0,"2026-04-16":160.0,"2026-04-17":153.0,"2026-04-18":182.0,"2026-04-20":205.0,"2026-04-22":485.0,"2026-04-23":274.0},"row":25},{"sub":"фунгицидная (1 раз)","culture":"Пшеница озимая","farm":"ГРК","plan":3798.0,"fact":3724.0,"left":74.0,"pct":98.1,"status":"ok","planStart":null,"planEnd":null,"factStart":"2026-04-25","factEnd":"2026-05-10","daily":{"2026-04-25":510.0,"2026-04-26":642.0,"2026-04-27":95.0,"2026-04-28":541.0,"2026-04-29":312.0,"2026-04-30":345.0,"2026-05-03":226.0,"2026-05-08":567.0,"2026-05-10":486.0},"row":26},{"sub":"Противозлаковая","culture":"Пшеница озимая","farm":"ГРК","plan":239.0,"fact":239.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-04-16","factEnd":"2026-04-17","daily":{"2026-04-16":184.0,"2026-04-17":55.0},"row":27},{"sub":"глифосатная","culture":"Подсонечниик","farm":"ГРК","plan":461.0,"fact":363.0,"left":98.0,"pct":78.7,"status":"ok","planStart":null,"planEnd":null,"factStart":"2026-04-05","factEnd":"2026-04-18","daily":{"2026-04-05":165.0,"2026-04-18":198.0},"row":28},{"sub":"","culture":"Рапс озимый","farm":"ГРК","plan":251.0,"fact":251.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-03-29","factEnd":"2026-04-01","daily":{"2026-03-29":130.0,"2026-03-30":90.0,"2026-04-01":31.0},"row":29},{"sub":"довсходовая глифосатная","culture":"Горох овощной (богара)","farm":"ГРК","plan":778.0,"fact":191.0,"left":587.0,"pct":24.6,"status":"risk","planStart":null,"planEnd":null,"factStart":"2026-04-05","factEnd":null,"daily":{"2026-04-05":144.0,"2026-05-06":47.0},"row":30},{"sub":"По всходам гербицидом","culture":"Горох овощной (полив)","farm":"ГРК","plan":420.0,"fact":366.0,"left":54.0,"pct":87.1,"status":"ok","planStart":null,"planEnd":null,"factStart":"2026-04-23","factEnd":null,"daily":{"2026-04-23":20.0,"2026-05-03":133.0,"2026-05-23":151.0,"2026-05-24":62.0},"row":31},{"sub":"фунгицидная (1 раз)","culture":"Горох овощной (полив)","farm":"ГРК","plan":420.0,"fact":153.0,"left":267.0,"pct":36.4,"status":"warn","planStart":null,"planEnd":null,"factStart":"2026-05-07","factEnd":null,"daily":{"2026-05-07":20.0,"2026-05-19":72.0,"2026-05-22":22.0,"2026-05-23":39.0},"row":32},{"sub":"гербицидная","culture":"Подсолнечник товарный","farm":"ГРК","plan":910.0,"fact":910.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-05-12","factEnd":"2026-05-24","daily":{"2026-05-12":309.0,"2026-05-13":121.0,"2026-05-22":223.0,"2026-05-23":190.0,"2026-05-24":67.0},"row":33},{"sub":"гербицидная","culture":"Кукуруза на зерно","farm":"ГРК","plan":237.0,"fact":237.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-05-22","factEnd":"2026-05-23","daily":{"2026-05-22":67.0,"2026-05-23":170.0},"row":34},{"sub":"фунгицидная (1 раз)","culture":"Горох овощной (богара)","farm":"ГРК","plan":778.0,"fact":778.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-04-21","factEnd":"2026-05-24","daily":{"2026-04-20":165.0,"2026-04-22":88.0,"2026-04-23":263.0,"2026-05-07":205.0,"2026-05-24":57.0},"row":35},{"sub":"Листовая","culture":"Горох овощной (полив)","farm":"ГРК","plan":420.0,"fact":93.0,"left":327.0,"pct":22.1,"status":"risk","planStart":null,"planEnd":null,"factStart":"2026-05-23","factEnd":null,"daily":{"2026-05-23":93.0},"row":36},{"sub":"Гербицидная","culture":"Кукуруза супер.сладкая(полив)","farm":"ГРК","plan":117.0,"fact":117.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-05-24","factEnd":"2026-05-24","daily":{"2026-05-24":117.0},"row":37}],"left":1429.0,"pct":88.7,"status":"ok","factStart":"2026-03-29","planStart":null,"planEnd":null},{"id":"him-obrabotka-2-4","section":"ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ","name":"Хим обработка №2","plan":6276.0,"fact":3720.0,"daily":{"2026-04-01":65.0,"2026-04-02":186.0,"2026-04-17":173.0,"2026-04-20":78.0,"2026-04-27":64.0,"2026-04-28":541.0,"2026-04-29":312.0,"2026-04-30":714.0,"2026-05-06":45.0,"2026-05-12":365.0,"2026-05-13":206.0,"2026-05-19":140.0,"2026-05-20":287.0,"2026-05-22":298.0,"2026-05-23":30.0,"2026-05-24":216.0},"items":[{"sub":"инсектицидная-фунгицидная (1 раз)","culture":"Рапс озимый","farm":"ГРК","plan":251.0,"fact":251.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-04-01","factEnd":"2026-04-02","daily":{"2026-04-01":65.0,"2026-04-02":186.0},"row":39},{"sub":"инсектицидная-фунгицидная (2 раз)","culture":"Рапс озимый","farm":"ГРК","plan":251.0,"fact":251.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-04-17","factEnd":"2026-04-20","daily":{"2026-04-17":173.0,"2026-04-20":78.0},"row":40},{"sub":"инскктицидно-фунгицидная","culture":"Пшеница озимая","farm":"ГРК","plan":3798.0,"fact":2433.0,"left":1365.0,"pct":64.1,"status":"warn","planStart":null,"planEnd":null,"factStart":"2026-04-25","factEnd":null,"daily":{"2026-04-27":64.0,"2026-04-28":541.0,"2026-04-29":312.0,"2026-04-30":345.0,"2026-05-12":297.0,"2026-05-13":181.0,"2026-05-19":140.0,"2026-05-20":287.0,"2026-05-22":50.0,"2026-05-24":216.0},"row":41},{"sub":"По всходам гербицидом (2 раз)","culture":"Горох овощной (богара)","farm":"ГРК","plan":778.0,"fact":108.0,"left":670.0,"pct":13.9,"status":"risk","planStart":null,"planEnd":null,"factStart":"2026-05-07","factEnd":null,"daily":{"2026-05-06":45.0,"2026-05-22":63.0},"row":42},{"sub":"фунгицидная (2 раз)","culture":"Горох овощной (богара)","farm":"ГРК","plan":778.0,"fact":657.0,"left":121.0,"pct":84.4,"status":"ok","planStart":null,"planEnd":null,"factStart":"2026-04-30","factEnd":null,"daily":{"2026-04-30":369.0,"2026-05-12":68.0,"2026-05-13":25.0,"2026-05-22":165.0,"2026-05-23":30.0},"row":43},{"sub":"фунгицидная (2 раз)","culture":"Горох овощной (полив)","farm":"ГРК","plan":420.0,"fact":20.0,"left":400.0,"pct":4.8,"status":"risk","planStart":null,"planEnd":null,"factStart":"2026-05-22","factEnd":null,"daily":{"2026-05-22":20.0},"row":44}],"left":2556.0,"pct":59.3,"status":"warn","factStart":"2026-04-01","planStart":null,"planEnd":null},{"id":"vnesenie-min-udobreniy-1-1","section":"ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ","name":"Внесение мин.удобрений №1","plan":4827.0,"fact":4338.0,"daily":{"2026-02-27":594.0,"2026-02-28":925.0,"2026-03-01":971.0,"2026-03-02":950.0,"2026-03-03":609.0,"2026-05-10":111.0,"2026-05-11":178.0},"items":[{"sub":"Селитра аммиачная","culture":"Пшеница озимая","farm":"ГРК","plan":3798.0,"fact":3798.0,"left":0.0,"pct":100.0,"status":"done","planStart":"2026-02-27","planEnd":"2026-03-03","factStart":"2026-02-27","factEnd":"2026-03-03","daily":{"2026-02-27":594.0,"2026-02-28":925.0,"2026-03-01":971.0,"2026-03-02":950.0,"2026-03-03":358.0},"row":18},{"sub":"Листовая","culture":"Горох овощной (богара)","farm":"ГРК","plan":778.0,"fact":289.0,"left":489.0,"pct":37.1,"status":"warn","planStart":null,"planEnd":null,"factStart":"2026-05-10","factEnd":null,"daily":{"2026-05-10":111.0,"2026-05-11":178.0},"row":19},{"sub":"Селитра аммиачная","culture":"Рапс озимый","farm":"ГРК","plan":251.0,"fact":251.0,"left":0.0,"pct":100.0,"status":"done","planStart":"2026-02-27","planEnd":"2026-03-03","factStart":"2026-03-03","factEnd":"2026-03-03","daily":{"2026-03-03":251.0},"row":20}],"left":489.0,"pct":89.9,"status":"ok","factStart":"2026-02-27","planStart":"2026-02-27","planEnd":"2026-03-03"},{"id":"vnesenie-min-udobreniy-2-2","section":"ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ","name":"Внесение мин.удобрений №2","plan":4049.0,"fact":4049.0,"daily":{"2026-03-23":481.0,"2026-03-24":609.0,"2026-03-25":937.0,"2026-03-28":850.0,"2026-03-29":921.0,"2026-03-30":251.0},"items":[{"sub":"Селитра аммиачная","culture":"Рапс озимый","farm":"ГРК","plan":251.0,"fact":251.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-03-30","factEnd":"2026-03-30","daily":{"2026-03-30":251.0},"row":22},{"sub":"Селитра аммиачная","culture":"Пшеница озимая","farm":"ГРК","plan":3798.0,"fact":3798.0,"left":0.0,"pct":100.0,"status":"done","planStart":"2026-03-23","planEnd":"2026-03-29","factStart":"2026-03-23","factEnd":null,"daily":{"2026-03-23":481.0,"2026-03-24":609.0,"2026-03-25":937.0,"2026-03-28":850.0,"2026-03-29":921.0},"row":23}],"left":0.0,"pct":100.0,"status":"done","factStart":"2026-03-23","planStart":"2026-03-23","planEnd":"2026-03-29"},{"id":"predposevnaya-kultivaciya-9","section":"ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ","name":"Предпосевная культивация","plan":2234.0,"fact":2075.0,"daily":{"2026-03-04":41.0,"2026-03-05":38.0,"2026-03-10":38.0,"2026-03-11":43.0,"2026-03-12":110.0,"2026-03-13":8.0,"2026-03-14":38.0,"2026-03-20":20.0,"2026-03-25":20.0,"2026-03-30":42.0,"2026-04-02":210.0,"2026-04-04":121.0,"2026-04-05":47.0,"2026-04-06":272.0,"2026-04-07":129.0,"2026-04-14":162.0,"2026-04-15":150.0,"2026-04-18":277.0,"2026-04-20":62.0,"2026-04-22":31.0,"2026-04-23":54.0,"2026-04-26":58.0,"2026-04-27":45.0,"2026-05-06":59.0},"items":[{"sub":"","culture":"Горох овощной (полив)","farm":"ГРК","plan":420.0,"fact":307.0,"left":113.0,"pct":73.1,"status":"ok","planStart":"2026-03-25","planEnd":"2026-04-30","factStart":"2026-04-25","factEnd":null,"daily":{"2026-03-25":20.0,"2026-03-30":42.0,"2026-04-02":58.0,"2026-04-18":40.0,"2026-04-20":62.0,"2026-04-22":31.0,"2026-04-23":54.0},"row":63},{"sub":"","culture":"Подсолнечник гибридный","farm":"ГРК","plan":149.0,"fact":103.0,"left":46.0,"pct":69.1,"status":"warn","planStart":null,"planEnd":null,"factStart":"2026-04-26","factEnd":null,"daily":{"2026-04-26":58.0,"2026-04-27":45.0},"row":64},{"sub":"","culture":"Горох овощной (богара)","farm":"ГРК","plan":336.0,"fact":336.0,"left":0.0,"pct":100.0,"status":"done","planStart":"2026-01-04","planEnd":"2026-03-20","factStart":"2026-03-04","factEnd":null,"daily":{"2026-03-04":41.0,"2026-03-05":38.0,"2026-03-10":38.0,"2026-03-11":43.0,"2026-03-12":110.0,"2026-03-13":8.0,"2026-03-14":38.0,"2026-03-20":20.0},"row":65},{"sub":"","culture":"Подсолнечник","farm":"ГРК","plan":486.0,"fact":486.0,"left":0.0,"pct":100.0,"status":"done","planStart":"2026-04-01","planEnd":"2026-04-10","factStart":"2026-04-02","factEnd":"2026-04-07","daily":{"2026-04-02":152.0,"2026-04-04":121.0,"2026-04-06":102.0,"2026-04-07":111.0},"row":66},{"sub":"","culture":"Кукуруза на зерно","farm":"ГРК","plan":237.0,"fact":237.0,"left":0.0,"pct":100.0,"status":"done","planStart":"2026-04-10","planEnd":"2026-04-15","factStart":"2026-04-18","factEnd":"2026-04-18","daily":{"2026-04-18":237.0},"row":67},{"sub":"","culture":"кукуруза супер сладкая","farm":"ГРК","plan":59.0,"fact":59.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-05-06","factEnd":null,"daily":{"2026-05-06":59.0},"row":68},{"sub":"","culture":"Подсолнечник товарный","farm":"ГРК","plan":547.0,"fact":547.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-04-05","factEnd":null,"daily":{"2026-04-05":47.0,"2026-04-06":170.0,"2026-04-07":18.0,"2026-04-14":162.0,"2026-04-15":150.0},"row":69}],"left":159.0,"pct":92.9,"status":"ok","factStart":"2026-03-04","planStart":"2026-01-04","planEnd":"2026-04-30"},{"id":"sev-goroshka-6","section":"ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ","name":"Сев горошка","plan":1907.16,"fact":1907.1,"daily":{"2026-03-01":19.0,"2026-03-02":39.0,"2026-03-03":53.0,"2026-03-04":44.0,"2026-03-05":33.0,"2026-03-09":39.0,"2026-03-10":42.0,"2026-03-11":21.0,"2026-03-13":38.0,"2026-03-14":41.0,"2026-03-18":28.0,"2026-03-19":35.0,"2026-03-20":30.0,"2026-03-23":34.0,"2026-03-24":20.0,"2026-03-28":34.0,"2026-03-29":47.0,"2026-03-30":42.0,"2026-04-01":45.0,"2026-04-02":56.0,"2026-04-04":25.0,"2026-04-05":127.0,"2026-04-06":82.0,"2026-04-07":53.0,"2026-04-15":70.0,"2026-04-16":56.0,"2026-04-17":50.0,"2026-04-18":44.0,"2026-04-20":102.44,"2026-04-22":56.0,"2026-04-23":56.0,"2026-04-26":58.0,"2026-04-27":65.9,"2026-04-28":22.6,"2026-04-29":87.16,"2026-04-30":49.0,"2026-05-01":30.0,"2026-05-03":48.0,"2026-05-04":31.0,"2026-05-05":35.0,"2026-05-06":19.0},"items":[{"sub":"","culture":"Горох овощной (богара)","farm":"ГРК","plan":778.0,"fact":778.0,"left":0.0,"pct":100.0,"status":"done","planStart":"2026-03-01","planEnd":"2026-04-04","factStart":"2026-03-01","factEnd":"2026-05-04","daily":{"2026-03-01":19.0,"2026-03-02":39.0,"2026-03-03":53.0,"2026-03-04":44.0,"2026-03-05":33.0,"2026-03-09":39.0,"2026-03-10":42.0,"2026-03-11":21.0,"2026-03-13":38.0,"2026-03-14":41.0,"2026-03-18":28.0,"2026-03-19":35.0,"2026-03-20":30.0,"2026-03-23":34.0,"2026-03-24":20.0,"2026-03-28":34.0,"2026-03-29":47.0,"2026-03-30":42.0,"2026-04-01":25.0,"2026-04-02":56.0,"2026-04-07":11.0,"2026-05-03":16.0,"2026-05-04":31.0},"row":51},{"sub":"","culture":"Горох овощной (полив)","farm":"ГРК","plan":420.0,"fact":420.0,"left":0.0,"pct":100.0,"status":"done","planStart":"2026-03-30","planEnd":"2026-05-05","factStart":"2026-04-01","factEnd":"2026-05-06","daily":{"2026-04-01":20.0,"2026-04-04":25.0,"2026-04-05":69.0,"2026-04-06":39.0,"2026-04-26":58.0,"2026-04-27":1.0,"2026-04-29":43.0,"2026-04-30":49.0,"2026-05-01":30.0,"2026-05-03":32.0,"2026-05-05":35.0,"2026-05-06":19.0},"row":52},{"sub":"","culture":"Горох овощной (полив)","farm":"АгроЛидер","plan":269.0,"fact":269.0,"left":0.0,"pct":100.0,"status":"done","planStart":"2026-04-05","planEnd":"2026-04-12","factStart":"2026-04-05","factEnd":"2026-04-16","daily":{"2026-04-05":58.0,"2026-04-06":43.0,"2026-04-07":42.0,"2026-04-15":70.0,"2026-04-16":56.0},"row":53},{"sub":"","culture":"Горох овощной (полив)","farm":"Колос","plan":440.16,"fact":440.1,"left":0.06,"pct":100.0,"status":"done","planStart":"2026-04-13","planEnd":"2026-04-26","factStart":"2026-04-17","factEnd":"2026-04-29","daily":{"2026-04-17":50.0,"2026-04-18":44.0,"2026-04-20":102.44,"2026-04-22":56.0,"2026-04-23":56.0,"2026-04-27":64.9,"2026-04-28":22.6,"2026-04-29":44.16},"row":54}],"left":0.06,"pct":100.0,"status":"done","factStart":"2026-03-01","planStart":"2026-03-01","planEnd":"2026-05-05"},{"id":"sev-zernovyh-7","section":"ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ","name":"Сев зерновых","plan":1296.0,"fact":1231.0,"daily":{"2026-04-05":80.0,"2026-04-06":160.0,"2026-04-07":7.0,"2026-04-14":161.0,"2026-04-15":195.0,"2026-04-16":198.0,"2026-04-17":90.0,"2026-04-18":162.0,"2026-04-20":94.0,"2026-05-23":84.0},"items":[{"sub":"","culture":"Подсолнечник товарный","farm":"ГРК","plan":910.0,"fact":910.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-04-05","factEnd":"2026-04-19","daily":{"2026-04-05":80.0,"2026-04-06":160.0,"2026-04-07":7.0,"2026-04-14":161.0,"2026-04-15":195.0,"2026-04-16":198.0,"2026-04-17":90.0,"2026-04-18":19.0},"row":56},{"sub":"","culture":"Кукуруза на зерно","farm":"ГРК","plan":237.0,"fact":237.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-04-18","factEnd":"2026-04-20","daily":{"2026-04-18":143.0,"2026-04-20":94.0},"row":57},{"sub":"","culture":"Подсолнечник гибридный","farm":"ГРК","plan":149.0,"fact":84.0,"left":65.0,"pct":56.4,"status":"warn","planStart":null,"planEnd":null,"factStart":"2026-05-23","factEnd":null,"daily":{"2026-05-23":84.0},"row":58}],"left":65.0,"pct":95.0,"status":"ok","factStart":"2026-04-05","planStart":null,"planEnd":null},{"id":"kultivaciya-1-10","section":"ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ","name":"Культивация№1","plan":970.0,"fact":725.0,"daily":{"2026-03-05":4.0,"2026-03-10":23.0,"2026-03-11":27.0,"2026-03-12":55.0,"2026-03-13":74.0,"2026-03-14":32.0,"2026-03-15":88.0,"2026-03-16":62.0,"2026-03-19":58.0,"2026-03-20":25.0,"2026-04-18":39.0,"2026-04-19":46.0,"2026-04-23":58.0,"2026-04-25":59.0,"2026-04-26":58.0,"2026-04-27":17.0},"items":[{"sub":"","culture":"Кукуруза (сладкая)","farm":"ГРК","plan":117.0,"fact":117.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-04-23","factEnd":"2026-04-25","daily":{"2026-04-23":58.0,"2026-04-25":59.0},"row":71},{"sub":"","culture":"Горох овощной (полив)","farm":"ГРК","plan":420.0,"fact":201.0,"left":219.0,"pct":47.9,"status":"warn","planStart":"2026-01-05","planEnd":"2026-03-20","factStart":"2026-03-05","factEnd":null,"daily":{"2026-03-05":4.0,"2026-03-10":23.0,"2026-03-11":27.0,"2026-03-12":35.0,"2026-03-13":27.0,"2026-04-18":39.0,"2026-04-19":46.0},"row":72},{"sub":"","culture":"Подсолнечник гибридный","farm":"ГРК","plan":149.0,"fact":149.0,"left":0.0,"pct":100.0,"status":"done","planStart":"2026-03-12","planEnd":"2026-03-20","factStart":"2026-03-12","factEnd":"2026-03-20","daily":{"2026-03-12":20.0,"2026-03-19":58.0,"2026-03-20":25.0,"2026-04-26":29.0,"2026-04-27":17.0},"row":73},{"sub":"","culture":"Кукуруза на зерно","farm":"ГРК","plan":284.0,"fact":149.0,"left":135.0,"pct":52.5,"status":"warn","planStart":null,"planEnd":null,"factStart":"2026-03-13","factEnd":null,"daily":{"2026-03-13":47.0,"2026-03-14":25.0,"2026-03-15":60.0,"2026-03-16":17.0},"row":74},{"sub":"","culture":"Подсолнечник","farm":"ГРК","plan":0.0,"fact":109.0,"left":0,"pct":0.0,"status":"risk","planStart":null,"planEnd":null,"factStart":"2026-03-14","factEnd":null,"daily":{"2026-03-14":7.0,"2026-03-15":28.0,"2026-03-16":45.0,"2026-04-26":29.0},"row":75}],"left":245.0,"pct":74.7,"status":"ok","factStart":"2026-03-05","planStart":"2026-01-05","planEnd":"2026-03-20"},{"id":"kultivaciya-111-13","section":"ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ","name":"Культивация№111","plan":970.0,"fact":725.0,"daily":{"2026-03-05":4.0,"2026-03-10":23.0,"2026-03-11":27.0,"2026-03-12":55.0,"2026-03-13":74.0,"2026-03-14":32.0,"2026-03-15":88.0,"2026-03-16":62.0,"2026-03-19":58.0,"2026-03-20":25.0,"2026-04-18":39.0,"2026-04-19":46.0,"2026-04-23":58.0,"2026-04-25":59.0,"2026-04-26":58.0,"2026-04-27":17.0},"items":[{"sub":"","culture":"Кукуруза (сладкая)","farm":"ГРК","plan":117.0,"fact":117.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-04-23","factEnd":"2026-04-25","daily":{"2026-04-23":58.0,"2026-04-25":59.0},"row":84},{"sub":"","culture":"Горох овощной (полив)","farm":"ГРК","plan":420.0,"fact":201.0,"left":219.0,"pct":47.9,"status":"warn","planStart":"2026-01-05","planEnd":"2026-03-20","factStart":"2026-03-05","factEnd":null,"daily":{"2026-03-05":4.0,"2026-03-10":23.0,"2026-03-11":27.0,"2026-03-12":35.0,"2026-03-13":27.0,"2026-04-18":39.0,"2026-04-19":46.0},"row":85},{"sub":"","culture":"Подсолнечник гибридный","farm":"ГРК","plan":149.0,"fact":149.0,"left":0.0,"pct":100.0,"status":"done","planStart":"2026-03-12","planEnd":"2026-03-20","factStart":"2026-03-12","factEnd":"2026-03-20","daily":{"2026-03-12":20.0,"2026-03-19":58.0,"2026-03-20":25.0,"2026-04-26":29.0,"2026-04-27":17.0},"row":86},{"sub":"","culture":"Кукуруза на зерно","farm":"ГРК","plan":284.0,"fact":149.0,"left":135.0,"pct":52.5,"status":"warn","planStart":null,"planEnd":null,"factStart":"2026-03-13","factEnd":null,"daily":{"2026-03-13":47.0,"2026-03-14":25.0,"2026-03-15":60.0,"2026-03-16":17.0},"row":87},{"sub":"","culture":"Подсолнечник","farm":"ГРК","plan":0.0,"fact":109.0,"left":0,"pct":0.0,"status":"risk","planStart":null,"planEnd":null,"factStart":"2026-03-14","factEnd":null,"daily":{"2026-03-14":7.0,"2026-03-15":28.0,"2026-03-16":45.0,"2026-04-26":29.0},"row":88}],"left":245.0,"pct":74.7,"status":"ok","factStart":"2026-03-05","planStart":"2026-01-05","planEnd":"2026-03-20"},{"id":"sev-sladkoy-kukuruzy-5","section":"ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ","name":"СЕВ СЛАДКОЙ КУКУРУЗЫ","plan":957.0,"fact":464.0,"daily":{"2026-05-05":17.0,"2026-05-06":2.0,"2026-05-07":58.0,"2026-05-08":112.0,"2026-05-11":71.0,"2026-05-18":77.0,"2026-05-22":38.0,"2026-05-23":39.0,"2026-05-24":50.0},"items":[{"sub":"","culture":"Кукуруза супер.сладкая(полив)","farm":"ГРК","plan":117.0,"fact":117.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-05-05","factEnd":null,"daily":{"2026-05-05":17.0,"2026-05-06":2.0,"2026-05-07":58.0,"2026-05-08":40.0},"row":46},{"sub":"","culture":"Кукуруза сладкая","farm":"Киров","plan":297.0,"fact":297.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-05-08","factEnd":"2026-05-23","daily":{"2026-05-08":72.0,"2026-05-11":71.0,"2026-05-18":77.0,"2026-05-22":38.0,"2026-05-23":39.0},"row":47},{"sub":"","culture":"Кукуруза суперсладкая","farm":"Ипатовский(винодельнийский)","plan":452.0,"fact":0,"left":452.0,"pct":0.0,"status":"risk","planStart":null,"planEnd":null,"factStart":null,"factEnd":null,"daily":{},"row":48},{"sub":"","culture":"Кукуруза сахарная","farm":"Ипатовский(винодельнийский)","plan":91.0,"fact":50.0,"left":41.0,"pct":54.9,"status":"warn","planStart":null,"planEnd":null,"factStart":"2026-05-24","factEnd":null,"daily":{"2026-05-24":50.0},"row":49}],"left":493.0,"pct":48.5,"status":"warn","factStart":"2026-05-05","planStart":null,"planEnd":null},{"id":"prikatyvanie-do-vshodov-8","section":"ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ","name":"Прикатывание до всходов","plan":778.0,"fact":111.0,"daily":{"2026-03-03":75.0,"2026-03-04":36.0},"items":[{"sub":"","culture":"Горох овощной (богара)","farm":"ГРК","plan":778.0,"fact":111.0,"left":667.0,"pct":14.3,"status":"risk","planStart":"2026-03-03","planEnd":"2026-03-23","factStart":"2026-03-03","factEnd":null,"daily":{"2026-03-03":75.0,"2026-03-04":36.0},"row":60}],"left":667.0,"pct":14.3,"status":"risk","factStart":"2026-03-03","planStart":"2026-03-03","planEnd":"2026-03-23"},{"id":"kultivaciya-2-11","section":"ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ","name":"Культивация№2","plan":569.0,"fact":203.0,"daily":{"2026-03-24":24.0,"2026-03-25":64.0,"2026-03-30":15.0,"2026-05-02":54.0,"2026-05-08":20.0,"2026-05-10":26.0},"items":[{"sub":"","culture":"Подсолнечник гибридный","farm":"ГРК","plan":149.0,"fact":149.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-03-24","factEnd":"2026-03-30","daily":{"2026-03-24":24.0,"2026-03-25":64.0,"2026-03-30":15.0,"2026-05-08":20.0,"2026-05-10":26.0},"row":77},{"sub":"","culture":"Горох овощной (полив)","farm":"ГРК","plan":420.0,"fact":54.0,"left":366.0,"pct":12.9,"status":"risk","planStart":null,"planEnd":null,"factStart":"2026-05-02","factEnd":null,"daily":{"2026-05-02":54.0},"row":78}],"left":366.0,"pct":35.7,"status":"warn","factStart":"2026-03-24","planStart":null,"planEnd":null},{"id":"kultivaciya-3-12","section":"ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ","name":"Культивация№3","plan":298.0,"fact":207.0,"daily":{"2026-05-08":33.0,"2026-05-09":25.0,"2026-05-22":91.0,"2026-05-23":58.0},"items":[{"sub":"","culture":"Подсолнечник гибридный","farm":"ГРК","plan":149.0,"fact":149.0,"left":0.0,"pct":100.0,"status":"done","planStart":null,"planEnd":null,"factStart":"2026-05-08","factEnd":"2026-05-22","daily":{"2026-05-08":33.0,"2026-05-09":25.0,"2026-05-22":91.0},"row":81},{"sub":"культивация №4","culture":"Подсолнечник гибридный","farm":"ГРК","plan":149.0,"fact":58.0,"left":91.0,"pct":38.9,"status":"warn","planStart":null,"planEnd":null,"factStart":"2026-05-23","factEnd":null,"daily":{"2026-05-23":58.0},"row":82}],"left":91.0,"pct":69.5,"status":"warn","factStart":"2026-05-08","planStart":null,"planEnd":null},{"id":"glubokoe-ryhlenie-40-45-0","section":"ВЕСЕННЕ-ПОЛЕВЫЕ РАБОТЫ","name":"Глубокое рыхление 40-45","plan":142.0,"fact":103.0,"daily":{"2026-01-23":2.0,"2026-03-04":1.0,"2026-03-12":9.0,"2026-03-13":34.0,"2026-03-14":28.0,"2026-03-15":29.0},"items":[{"sub":"","culture":"Подсолнечник гибридный","farm":"ГРК","plan":142.0,"fact":103.0,"left":39.0,"pct":72.5,"status":"ok","planStart":"2026-01-23","planEnd":"2026-02-20","factStart":"2026-01-23","factEnd":null,"daily":{"2026-01-23":2.0,"2026-03-04":1.0,"2026-03-12":9.0,"2026-03-13":34.0,"2026-03-14":28.0,"2026-03-15":29.0},"row":16}],"left":39.0,"pct":72.5,"status":"ok","factStart":"2026-01-23","planStart":"2026-01-23","planEnd":"2026-02-20"}]}</script>
+
+<header>
+  <div class="head-top">
+    <h1 id="ttl">План-факт</h1>
+    <span class="date" id="asof">—</span>
+  </div>
+  <div class="kpi" id="kpi"></div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="svod" aria-selected="true">Сводка</button>
+    <button role="tab" data-tab="days" aria-selected="false">По дням</button>
+    <button role="tab" data-tab="terms" aria-selected="false">Сроки</button>
+  </nav>
+</header>
+
+<div class="filters">
+  <div class="chiprow" id="f-farm"></div>
+  <div class="chiprow" id="f-culture"></div>
+</div>
+
+<main id="view"><p class="empty">Загрузка данных…</p></main>
+
+<div class="bottom">
+  <button class="btn ghost" id="reset">Сбросить срезы</button>
+  <a class="btn" id="xlsx" href="otchet.xlsx" download>Скачать Excel</a>
+</div>
+
+<footer id="foot"></footer>
+
+<script>
+const RU_MON = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const RU_DOW = ['вс','пн','вт','ср','чт','пт','сб'];
+const fmt   = n => (n||0).toLocaleString('ru-RU', {maximumFractionDigits:0});
+const dShort= s => {const d=new Date(s); return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`};
+const dLong = s => s ? `${String(new Date(s).getDate()).padStart(2,'0')} ${RU_MON[new Date(s).getMonth()]}` : '—';
+const dow   = s => RU_DOW[new Date(s).getDay()];
+
+let DATA = null;
+const S = {tab:'svod', farm:null, culture:null, op:null, day:null, cum:false};
+
+/* --- состояние живёт в адресе страницы: срез можно переслать ссылкой --- */
+function readHash(){
+  const q = new URLSearchParams(location.hash.slice(1));
+  for (const k of ['tab','farm','culture','op','day']) if (q.get(k)) S[k] = q.get(k);
+  S.cum = q.get('cum') === '1';
+}
+function writeHash(){
+  const q = new URLSearchParams();
+  q.set('tab', S.tab);
+  if (S.farm) q.set('farm', S.farm);
+  if (S.culture) q.set('culture', S.culture);
+  if (S.op) q.set('op', S.op);
+  if (S.day) q.set('day', S.day);
+  if (S.cum) q.set('cum','1');
+  history.replaceState(null,'','#'+q.toString());
+}
+
+/* --- срез: пересчитываем виды работ под выбранные предприятие и культуру --- */
+function slice(){
+  return DATA.ops.map(op => {
+    const items = op.items.filter(i =>
+      (!S.farm || i.farm === S.farm) && (!S.culture || i.culture === S.culture));
+    if (!items.length) return null;
+    const plan = items.reduce((s,i)=>s+i.plan,0);
+    const fact = items.reduce((s,i)=>s+i.fact,0);
+    const daily = {};
+    items.forEach(i => Object.entries(i.daily).forEach(([d,v]) => daily[d]=(daily[d]||0)+v));
+    const pct = plan ? +(fact/plan*100).toFixed(1) : 0;
+    return {...op, items, plan, fact, daily, pct, left:Math.max(plan-fact,0), status:status(pct)};
+  }).filter(Boolean).sort((a,b)=>b.plan-a.plan);
+}
+const status = p => p>=99.5?'done':p>=70?'ok':p>=35?'warn':'risk';
+
+function kpi(ops){
+  const plan = ops.reduce((s,o)=>s+o.plan,0), fact = ops.reduce((s,o)=>s+o.fact,0);
+  const byDay = {};
+  ops.forEach(o=>Object.entries(o.daily).forEach(([d,v])=>byDay[d]=(byDay[d]||0)+v));
+  const days = Object.keys(byDay).sort();
+  const last = days[days.length-1];
+  const week = days.slice(-7).reduce((s,d)=>s+byDay[d],0);
+  return {plan, fact, left:Math.max(plan-fact,0), pct: plan?fact/plan*100:0,
+          last, lastFact: byDay[last]||0, week, tempo: week/Math.max(days.slice(-7).length,1), byDay, days};
+}
+
+function renderHeader(k){
+  document.getElementById('ttl').textContent = `Полевые работы ${DATA.meta.season}`;
+  document.getElementById('asof').textContent = 'на ' + dLong(DATA.meta.reportDate);
+  document.getElementById('kpi').innerHTML = `
+    <div><b>${k.pct.toFixed(0)}%</b><span>выполнено</span></div>
+    <div><b>${fmt(k.fact)}</b><span>факт, га</span></div>
+    <div><b>${fmt(k.plan)}</b><span>план, га</span></div>
+    <div><b>${fmt(k.left)}</b><span>остаток, га</span></div>
+    <div><b>${fmt(k.lastFact)}</b><span>за ${dShort(k.last||DATA.meta.reportDate)}</span></div>
+    <div><b>${fmt(k.tempo)}</b><span>темп, га/сут</span></div>`;
+}
+
+function chips(box, label, values, key){
+  box.innerHTML = [`<button class="chip" data-v="" aria-pressed="${!S[key]}"><span class="lbl">${label}</span>все</button>`]
+    .concat(values.map(v=>`<button class="chip" data-v="${esc(v)}" aria-pressed="${S[key]===v}">${esc(v)}</button>`)).join('');
+  box.onclick = e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    S[key] = b.dataset.v || null; S.op = null; render();
+  };
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ================= вкладка «Сводка» ================= */
+function viewSvod(ops){
+  if (!ops.length) return `<p class="empty">По этому срезу работ нет.<br>Снимите один из фильтров.</p>`;
+  return `<p class="hint">Нажмите на вид работ — раскроется по культурам и предприятиям.</p>` +
+    ops.map(o => `
+      <details class="op" ${S.op===o.id?'open':''} data-op="${o.id}">
+        <summary>
+          <div class="op-l1">
+            <span class="dot s-${o.status}"></span>
+            <span class="op-name">${esc(o.name)}</span>
+            <span class="op-pct c-${o.status}">${o.pct.toFixed(0)}%</span>
+          </div>
+          <div class="field f-${o.status}"><i style="width:${Math.min(o.pct,100)}%"></i></div>
+          <div class="op-meta">
+            <span>факт <b>${fmt(o.fact)}</b> га</span>
+            <span>план <b>${fmt(o.plan)}</b> га</span>
+            <span>остаток <b>${fmt(o.left)}</b> га</span>
+          </div>
+        </summary>
+        <div class="detail">${o.items.slice().sort((a,b)=>b.plan-a.plan).map(item).join('')}</div>
+      </details>`).join('');
+}
+
+function item(i){
+  const days = Object.keys(i.daily).sort();
+  const max = Math.max(...Object.values(i.daily), 1);
+  const spark = days.length ? `<div class="spark">${days.slice(-24).map(d =>
+      `<span class="${d===DATA.meta.reportDate?'hot':''}" style="height:${Math.max(i.daily[d]/max*100,6)}%" title="${dShort(d)}: ${fmt(i.daily[d])} га"></span>`).join('')}</div>` : '';
+  return `<div class="item">
+    <div class="item-h">
+      <span class="t">${esc(i.culture)}${i.sub?`<em>${esc(i.sub)}</em>`:''}</span>
+      <span class="tagfarm">${esc(i.farm)}</span>
+      <span class="op-pct c-${i.status}" style="font-size:14px">${i.pct.toFixed(0)}%</span>
+    </div>
+    <div class="field f-${i.status}"><i style="width:${Math.min(i.pct,100)}%"></i></div>
+    <div class="op-meta"><span>факт <b>${fmt(i.fact)}</b></span><span>план <b>${fmt(i.plan)}</b></span>
+      <span>остаток <b>${fmt(i.left)}</b></span><span>начали <b>${dLong(i.factStart)}</b></span></div>
+    ${spark}</div>`;
+}
+
+/* ================= вкладка «По дням» ================= */
+function viewDays(ops, k){
+  const days = k.days;
+  if (!days.length) return `<p class="empty">По этому срезу выработки нет.</p>`;
+  if (!S.day || !days.includes(S.day)) S.day = days[days.length-1];
+  const tail = days.slice(-21);
+  const max = Math.max(...tail.map(d=>k.byDay[d]), 1);
+
+  const bars = `<div class="bars">${tail.map(d =>
+    `<span class="${d===S.day?'sel':''}" data-day="${d}" style="height:${Math.max(k.byDay[d]/max*100,3)}%" title="${dShort(d)}: ${fmt(k.byDay[d])} га"></span>`).join('')}</div>`;
+
+  const chipsDays = `<div class="daybar">${tail.slice().reverse().map(d =>
+    `<button class="day" data-day="${d}" aria-pressed="${d===S.day}"><small>${dow(d)} ${dShort(d)}</small><b>${fmt(k.byDay[d])}</b></button>`).join('')}</div>`;
+
+  // строки: за выбранный день или нарастающим итогом с начала сезона по этот день
+  const rows = [];
+  ops.forEach(o => o.items.forEach(i => {
+    const v = S.cum
+      ? Object.entries(i.daily).reduce((s,[d,x]) => d<=S.day ? s+x : s, 0)
+      : (i.daily[S.day] || 0);
+    if (v > 0) rows.push({op:o.name, i, v});
+  }));
+  rows.sort((a,b)=>b.v-a.v);
+  const sum = rows.reduce((s,r)=>s+r.v,0);
+
+  return `
+    <div class="chiprow" style="padding:0 0 10px">
+      <button class="chip" data-cum="0" aria-pressed="${!S.cum}">За день</button>
+      <button class="chip" data-cum="1" aria-pressed="${S.cum}">Накопительно</button>
+    </div>
+    <p class="hint">Столбик или карточку дня можно нажать — список внизу перестроится.</p>
+    ${bars}${chipsDays}
+    <div class="row" style="background:var(--ink);color:#F3F5EF;border-color:var(--ink)">
+      <span class="t">${S.cum ? 'Нарастающим итогом по '+dLong(S.day) : 'Итого за '+dow(S.day)+' '+dLong(S.day)}</span>
+      <span class="v">${fmt(sum)} га</span>
+    </div>
+    ${rows.length ? rows.map(r => `<div class="row">
+        <span class="t">${esc(r.op)}<small>${esc(r.i.culture)} · ${esc(r.i.farm)}${r.i.sub?' · '+esc(r.i.sub):''}</small></span>
+        <span class="v">${fmt(r.v)}</span></div>`).join('')
+      : `<p class="empty">В этот день работ по срезу не было.</p>`}`;
+}
+
+/* ================= вкладка «Сроки» ================= */
+function viewTerms(ops){
+  const all = [];
+  ops.forEach(o => o.items.forEach(i => {
+    const ds = [i.planStart, i.planEnd, i.factStart, i.factEnd].filter(Boolean);
+    if (ds.length) all.push(...ds.map(d => +new Date(d)));
+  }));
+  if (!all.length) return `<p class="empty">Сроки по этому срезу не заданы.</p>`;
+  const min = Math.min(...all), max = Math.max(...all, +new Date(DATA.meta.reportDate));
+  const pos = d => ((+new Date(d) - min) / Math.max(max - min, 1)) * 100;
+
+  return `<div class="legend"><span><s style="background:#C3CDBC"></s>план</span>
+      <span><s style="background:#4B7F3E"></s>факт</span>
+      <span>шкала ${dLong(new Date(min).toISOString().slice(0,10))} — ${dLong(new Date(max).toISOString().slice(0,10))}</span></div>` +
+    ops.map(o => `<div class="gantt">
+      <div class="g-h"><span class="dot s-${o.status}" style="margin-top:5px"></span>
+        <span class="op-name" style="flex:1">${esc(o.name)}</span>
+        <span class="op-pct c-${o.status}" style="font-size:15px">${o.pct.toFixed(0)}%</span></div>
+      ${o.items.slice().sort((a,b)=>b.plan-a.plan).map(i => {
+        const ps=i.planStart, pe=i.planEnd||i.planStart, fs=i.factStart, fe=i.factEnd||DATA.meta.reportDate;
+        const late = ps && fs && new Date(fs) > new Date(ps);
+        return `<div style="margin:9px 0 0">
+          <div class="item-h"><span class="t">${esc(i.culture)}<em>${esc(i.farm)}${i.sub?' · '+esc(i.sub):''}</em></span>
+            ${late?'<span class="tagfarm" style="color:var(--clay);border-color:var(--clay)">позже плана</span>':''}</div>
+          ${ps?`<div class="track tr-plan"><i style="left:${pos(ps)}%;width:${Math.max(pos(pe)-pos(ps),1.5)}%"></i></div>`:''}
+          ${fs?`<div class="track tr-fact"><i style="left:${pos(fs)}%;width:${Math.max(pos(fe)-pos(fs),1.5)}%"></i></div>`:''}
+          <div class="dates">
+            <span>план ${ps ? `<b>${dLong(ps)} — ${dLong(i.planEnd)||'—'}</b>` : 'агросрок не задан'}</span>
+            <span>факт ${fs ? `<b>${dLong(fs)} — ${i.factEnd ? dLong(i.factEnd) : 'в работе'}</b>` : 'не начинали'}</span>
+          </div></div>`;
+      }).join('')}</div>`).join('');
+}
+
+/* ================= сборка ================= */
+function render(){
+  const ops = slice();
+  const k = kpi(ops);
+  renderHeader(k);
+  chips(document.getElementById('f-farm'), 'Предприятие', DATA.farms, 'farm');
+  chips(document.getElementById('f-culture'), 'Культура', DATA.cultures, 'culture');
+  document.querySelectorAll('.tabs button').forEach(b =>
+    b.setAttribute('aria-selected', b.dataset.tab === S.tab));
+
+  const view = document.getElementById('view');
+  view.innerHTML = S.tab === 'svod' ? viewSvod(ops)
+                 : S.tab === 'days' ? viewDays(ops, k)
+                 : viewTerms(ops);
+
+  view.querySelectorAll('.op').forEach(d => d.addEventListener('toggle', () => {
+    S.op = d.open ? d.dataset.op : (S.op === d.dataset.op ? null : S.op); writeHash();
+  }));
+  view.querySelectorAll('[data-day]').forEach(el => el.onclick = () => { S.day = el.dataset.day; render(); });
+  view.querySelectorAll('[data-cum]').forEach(el => el.onclick = () => { S.cum = el.dataset.cum === '1'; render(); });
+
+  document.getElementById('foot').textContent =
+    `Источник: ${DATA.meta.source} · обновлено ${DATA.meta.generatedAt.replace('T',' ')}`;
+  writeHash();
+}
+
+document.querySelectorAll('.tabs button').forEach(b =>
+  b.onclick = () => { S.tab = b.dataset.tab; render(); });
+document.getElementById('reset').onclick = () => {
+  S.farm = S.culture = S.op = null; S.cum = false; render();
+};
+
+readHash();
+/* автономная версия: данные вшиты в файл, интернет не нужен */
+const emb = document.getElementById('embedded');
+if (emb) { DATA = JSON.parse(emb.textContent); render(); }
+else fetch('data.json?v=' + Date.now())
+  .then(r => r.ok ? r.json() : Promise.reject(r.status))
+  .then(d => { DATA = d; render(); })
+  .catch(e => {
+    document.getElementById('view').innerHTML =
+      `<p class="empty">Данные не загрузились (${e}).<br>Отчёт собирается автоматически после загрузки свода в репозиторий.</p>`;
+  });
+</script>
+</body>
+</html>
